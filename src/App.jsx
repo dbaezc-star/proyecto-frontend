@@ -4,6 +4,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
 import DonorDashboard from './pages/donor/DonorDashboard';
+import AestheticDashboard from './pages/aesthetic/AestheticDashboard';
 
 function App() {
     console.log('App cargado');
@@ -16,6 +17,7 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/donor/dashboard" element={<DonorDashboard />} />
+                    <Route path="/aesthetic/dashboard" element={<AestheticDashboard />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
