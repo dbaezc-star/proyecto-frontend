@@ -3,8 +3,10 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
+import DonorDashboard from './pages/donor/DonorDashboard';
 
 function App() {
+    console.log('App cargado');
     return (
         <AuthProvider>
             <BrowserRouter>
@@ -13,6 +15,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/donor/dashboard" element={<DonorDashboard />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>

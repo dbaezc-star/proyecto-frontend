@@ -15,7 +15,13 @@ const Login = () => {
         try {
             const data = await login(email, password);
             loginUser({ email: data.email, role: data.role }, data.token);
-            navigate('/dashboard');
+            if (data.role === 'DONOR') {
+                navigate('/donor/dashboard');
+            } else if (data.role === 'AESTHETIC_CENTER') {
+                navigate('/aesthetic/dashboard');
+            } else {
+                navigate('/dashboard');
+                }
         } catch (err) {
             setError('Credenciales incorrectas');
         }
