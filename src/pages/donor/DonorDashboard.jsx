@@ -1,13 +1,43 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getDonorByEmail, getDonationsByDonor, createDonation } from '../../api/donations';
 
 const DonorDashboard = () => {
-    const { user, logoutUser } = useAuth();
+    const { user, token, logoutUser } = useAuth();
     const navigate = useNavigate();
+    const [donations, setDonations] = useState([]);
+    const [donorId, setDonorId] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const donor = await getDonorByEmail(user.email, token);
+                setDonorId(donor.id);
+                const donationList = await getDonationsByDonor(donor.id, token);
+                setDonations(donationList);
+            } catch (err) {
+                console.error('Error cargando datos:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (user?.email) fetchData();
+    }, [user, token]);
 
     const handleLogout = () => {
         logoutUser();
         navigate('/login');
+    };
+
+    const handleCreateDonation = async () => {
+        try {
+            const nueva = await createDonation(donorId, token);
+            setDonations([...donations, nueva]);
+        } catch (err) {
+            console.error('Error creando donación:', err);
+        }
     };
 
     return (
@@ -29,8 +59,21 @@ const DonorDashboard = () => {
                     </div>
                     <div style={styles.card}>
                         <h4 style={styles.cardTitle}>Mis Donaciones</h4>
-                        <p style={styles.empty}>No tienes donaciones registradas aún.</p>
-                        <button style={styles.button}>+ Registrar donación</button>
+                        {loading ? (
+                            <p style={styles.empty}>Cargando...</p>
+                        ) : donations.length === 0 ? (
+                            <p style={styles.empty}>No tienes donaciones registradas aún.</p>
+                        ) : (
+                            donations.map((d) => (
+                                <div key={d.id} style={styles.donationItem}>
+                                    <span>Donación #{d.id}</span>
+                                    <span style={styles.status}>{d.status}</span>
+                                </div>
+                            ))
+                        )}
+                        <button style={styles.button} onClick={handleCreateDonation}>
+                            + Registrar donación
+                        </button>
                     </div>
                 </div>
             </div>
@@ -51,7 +94,9 @@ const styles = {
     card: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', minWidth: '280px', flex: 1 },
     cardTitle: { color: '#e91e8c', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' },
     empty: { color: '#999', fontSize: '0.9rem', marginBottom: '1rem' },
-    button: { backgroundColor: '#e91e8c', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', width: '100%' }
+    donationItem: { display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #eee', marginBottom: '0.5rem' },
+    status: { color: '#e91e8c', fontWeight: 'bold', fontSize: '0.85rem' },
+    button: { backgroundColor: '#e91e8c', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', width: '100%', marginTop: '1rem' }
 };
 
 export default DonorDashboard;
