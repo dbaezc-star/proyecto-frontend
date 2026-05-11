@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = 'https://proyecto-backend-production-b868.up.railway.app/api';
 
 export const createDonation = async (donorId, token) => {
     const response = await axios.post(
