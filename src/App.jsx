@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import Dashboard from './pages/Dashboard';
+import Login from './pages/auth/login';
+import Register from './pages/auth/register';
+import Dashboard from './pages/dashboard';
 import DonorDashboard from './pages/donor/DonorDashboard';
 import AestheticDashboard from './pages/aesthetic/AestheticDashboard';
 
@@ -25,3 +25,4 @@ function App() {
 }
 
 export default App;
+
