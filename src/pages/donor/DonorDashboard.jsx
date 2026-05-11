@@ -1,13 +1,15 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getDonorByEmail, getDonationsByDonor, createDonation } from '../../api/donations';
+import { getDonorByEmail, getDonationsByDonor, createDonation, getAestheticCenters, createAppointment, getAppointmentsByDonor } from '../../api/donations';
 
 const DonorDashboard = () => {
     const { user, token, logoutUser } = useAuth();
     const navigate = useNavigate();
     const [donations, setDonations] = useState([]);
     const [donorId, setDonorId] = useState(null);
+    const [centers, setCenters] = useState([]);
+    const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -17,6 +19,10 @@ const DonorDashboard = () => {
                 setDonorId(donor.id);
                 const donationList = await getDonationsByDonor(donor.id, token);
                 setDonations(donationList);
+                const centerList = await getAestheticCenters(token);
+                setCenters(centerList);
+                const appointmentList = await getAppointmentsByDonor(donor.id, token);
+                setAppointments(appointmentList);
             } catch (err) {
                 console.error('Error cargando datos:', err);
             } finally {
@@ -40,6 +46,17 @@ const DonorDashboard = () => {
         }
     };
 
+    const handleAgendar = async (centerId) => {
+        try {
+            const cita = await createAppointment(donorId, centerId, token);
+            setAppointments([...appointments, cita]);
+            alert('¡Cita agendada exitosamente!');
+        } catch (err) {
+            console.error('Error agendando cita:', err);
+            alert('Error al agendar la cita');
+        }
+    };
+
     return (
         <div style={styles.container}>
             <div style={styles.header}>
@@ -59,21 +76,41 @@ const DonorDashboard = () => {
                     </div>
                     <div style={styles.card}>
                         <h4 style={styles.cardTitle}>Mis Donaciones</h4>
-                        {loading ? (
-                            <p style={styles.empty}>Cargando...</p>
-                        ) : donations.length === 0 ? (
-                            <p style={styles.empty}>No tienes donaciones registradas aún.</p>
-                        ) : (
-                            donations.map((d) => (
-                                <div key={d.id} style={styles.donationItem}>
-                                    <span>Donación #{d.id}</span>
-                                    <span style={styles.status}>{d.status}</span>
+                        {loading ? <p style={styles.empty}>Cargando...</p>
+                        : donations.length === 0 ? <p style={styles.empty}>No tienes donaciones registradas aún.</p>
+                        : donations.map((d) => (
+                            <div key={d.id} style={styles.donationItem}>
+                                <span>Donación #{d.id}</span>
+                                <span style={styles.status}>{d.status}</span>
+                            </div>
+                        ))}
+                        <button style={styles.button} onClick={handleCreateDonation}>+ Registrar donación</button>
+                    </div>
+                    <div style={styles.card}>
+                        <h4 style={styles.cardTitle}>Mis Citas</h4>
+                        {loading ? <p style={styles.empty}>Cargando...</p>
+                        : appointments.length === 0 ? <p style={styles.empty}>No tienes citas agendadas aún.</p>
+                        : appointments.map((a) => (
+                            <div key={a.id} style={styles.donationItem}>
+                                <span>{a.aestheticCenter?.name}</span>
+                                <span style={styles.status}>{a.status}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={styles.card}>
+                        <h4 style={styles.cardTitle}>Centros Estéticos Disponibles</h4>
+                        {loading ? <p style={styles.empty}>Cargando...</p>
+                        : centers.length === 0 ? <p style={styles.empty}>No hay centros disponibles aún.</p>
+                        : centers.map((c) => (
+                            <div key={c.id} style={styles.centerItem}>
+                                <div>
+                                    <strong>{c.name}</strong>
+                                    <p style={styles.centerInfo}>{c.city} — {c.address}</p>
+                                    <p style={styles.centerInfo}>{c.phone}</p>
                                 </div>
-                            ))
-                        )}
-                        <button style={styles.button} onClick={handleCreateDonation}>
-                            + Registrar donación
-                        </button>
+                                <button style={styles.agendarBtn} onClick={() => handleAgendar(c.id)}>Agendar cita</button>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -96,6 +133,9 @@ const styles = {
     empty: { color: '#999', fontSize: '0.9rem', marginBottom: '1rem' },
     donationItem: { display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #eee', marginBottom: '0.5rem' },
     status: { color: '#e91e8c', fontWeight: 'bold', fontSize: '0.85rem' },
+    centerItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #eee', marginBottom: '0.5rem' },
+    centerInfo: { color: '#999', fontSize: '0.85rem', margin: '0.2rem 0' },
+    agendarBtn: { backgroundColor: '#e91e8c', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap' },
     button: { backgroundColor: '#e91e8c', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', width: '100%', marginTop: '1rem' }
 };
 
