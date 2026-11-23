@@ -1,36 +1,41 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getDonorByEmail, getDonationsByDonor, createDonation, getAestheticCenters, createAppointment, getAppointmentsByDonor } from '../../api/donations';
+import { getMyDonorProfile, getDonationsByDonor, createDonation, getAestheticCenters, createAppointment, getAppointmentsByDonor } from '../../api/donations';
+import { getErrorMessage } from '../../api/client';
 
 const DonorDashboard = () => {
-    const { user, token, logoutUser } = useAuth();
+    const { user, logoutUser } = useAuth();
     const navigate = useNavigate();
     const [donations, setDonations] = useState([]);
     const [donorId, setDonorId] = useState(null);
     const [centers, setCenters] = useState([]);
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const donor = await getDonorByEmail(user.email, token);
+                const donor = await getMyDonorProfile();
                 setDonorId(donor.id);
-                const donationList = await getDonationsByDonor(donor.id, token);
+                // Las tres consultas son independientes: se hacen en paralelo
+                const [donationList, centerList, appointmentList] = await Promise.all([
+                    getDonationsByDonor(donor.id),
+                    getAestheticCenters(),
+                    getAppointmentsByDonor(donor.id),
+                ]);
                 setDonations(donationList);
-                const centerList = await getAestheticCenters(token);
                 setCenters(centerList);
-                const appointmentList = await getAppointmentsByDonor(donor.id, token);
                 setAppointments(appointmentList);
             } catch (err) {
-                console.error('Error cargando datos:', err);
+                setError(getErrorMessage(err, 'Error cargando tus datos'));
             } finally {
                 setLoading(false);
             }
         };
-        if (user?.email) fetchData();
-    }, [user, token]);
+        fetchData();
+    }, []);
 
     const handleLogout = () => {
         logoutUser();
@@ -39,21 +44,20 @@ const DonorDashboard = () => {
 
     const handleCreateDonation = async () => {
         try {
-            const nueva = await createDonation(donorId, token);
-            setDonations([...donations, nueva]);
+            const nueva = await createDonation(donorId);
+            setDonations((prev) => [...prev, nueva]);
         } catch (err) {
-            console.error('Error creando donación:', err);
+            setError(getErrorMessage(err, 'Error registrando la donación'));
         }
     };
 
     const handleAgendar = async (centerId) => {
         try {
-            const cita = await createAppointment(donorId, centerId, token);
-            setAppointments([...appointments, cita]);
+            const cita = await createAppointment(donorId, centerId);
+            setAppointments((prev) => [...prev, cita]);
             alert('¡Cita agendada exitosamente!');
         } catch (err) {
-            console.error('Error agendando cita:', err);
-            alert('Error al agendar la cita');
+            alert(getErrorMessage(err, 'Error al agendar la cita'));
         }
     };
 
@@ -68,6 +72,7 @@ const DonorDashboard = () => {
             </div>
             <div style={styles.content}>
                 <h3 style={styles.welcome}>Bienvenido, donante 👋</h3>
+                {error && <p style={styles.error}>{error}</p>}
                 <div style={styles.cards}>
                     <div style={styles.card}>
                         <h4 style={styles.cardTitle}>Mi Perfil</h4>
@@ -84,7 +89,7 @@ const DonorDashboard = () => {
                                 <span style={styles.status}>{d.status}</span>
                             </div>
                         ))}
-                        <button style={styles.button} onClick={handleCreateDonation}>+ Registrar donación</button>
+                        <button style={styles.button} onClick={handleCreateDonation} disabled={!donorId}>+ Registrar donación</button>
                     </div>
                     <div style={styles.card}>
                         <h4 style={styles.cardTitle}>Mis Citas</h4>
@@ -127,6 +132,7 @@ const styles = {
     logout: { backgroundColor: 'white', color: '#e91e8c', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' },
     content: { padding: '2rem' },
     welcome: { color: '#333', marginBottom: '1.5rem' },
+    error: { backgroundColor: '#fdecea', color: '#b71c1c', padding: '0.75rem 1rem', borderRadius: '6px', marginBottom: '1rem' },
     cards: { display: 'flex', gap: '1.5rem', flexWrap: 'wrap' },
     card: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', minWidth: '280px', flex: 1 },
     cardTitle: { color: '#e91e8c', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' },
