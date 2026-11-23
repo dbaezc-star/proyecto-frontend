@@ -1,29 +1,33 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { login } from '../../api/auth';
-import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../../api/client';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { homeForRole } from '../../utils/roles';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { loginUser } = useAuth();
+    const [submitting, setSubmitting] = useState(false);
+    const { user, loginUser } = useAuth();
     const navigate = useNavigate();
+
+    // Si ya hay sesión, ir directo al panel
+    if (user) return <Navigate to={homeForRole(user.role)} replace />;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setSubmitting(true);
         try {
             const data = await login(email, password);
             loginUser({ email: data.email, role: data.role }, data.token);
-            if (data.role === 'DONOR') {
-                navigate('/donor/dashboard');
-            } else if (data.role === 'AESTHETIC_CENTER') {
-                navigate('/aesthetic/dashboard');
-            } else {
-                navigate('/dashboard');
-                }
+            navigate(homeForRole(data.role));
         } catch (err) {
-            setError('Credenciales incorrectas');
+            setError(getErrorMessage(err, 'Credenciales incorrectas'));
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -50,10 +54,12 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                    <button style={styles.button} type="submit">Ingresar</button>
+                    <button style={styles.button} type="submit" disabled={submitting}>
+                        {submitting ? 'Ingresando...' : 'Ingresar'}
+                    </button>
                 </form>
                 <p style={styles.link}>
-                    ¿No tienes cuenta? <a href="/register">Regístrate</a>
+                    ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
                 </p>
             </div>
         </div>

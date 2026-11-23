@@ -1,83 +1,32 @@
-import axios from 'axios';
+import client from './client';
 
-const API_URL = 'https://proyecto-backend-production-b868.up.railway.app/api';
+// ---- Donantes ----
+export const getMyDonorProfile = async () => (await client.get('/donors/me')).data;
 
-export const createDonation = async (donorId, token) => {
-    const response = await axios.post(
-        API_URL + '/donations?donorId=' + donorId,
-        {},
-        { headers: { Authorization: 'Bearer ' + token } }
-    );
-    return response.data;
-};
+// ---- Centros estéticos ----
+export const getMyCenterProfile = async () => (await client.get('/aesthetic-centers/me')).data;
 
-export const getDonationsByDonor = async (donorId, token) => {
-    const response = await axios.get(
-        API_URL + '/donations/donor/' + donorId,
-        { headers: { Authorization: 'Bearer ' + token } }
-    );
-    return response.data;
-};
+export const getAestheticCenters = async () => (await client.get('/aesthetic-centers')).data;
 
-export const getDonorByEmail = async (email, token) => {
-    const response = await axios.get(
-        API_URL + '/donors/by-email/' + email,
-        { headers: { Authorization: 'Bearer ' + token } }
-    );
-    return response.data;
-};
-export const getDonationsByAestheticCenter = async (centerId, token) => {
-    const response = await axios.get(
-        API_URL + '/donations/aesthetic-center/' + centerId,
-        { headers: { Authorization: 'Bearer ' + token } }
-    );
-    return response.data;
-};
+// ---- Donaciones ----
+export const createDonation = async (donorId) =>
+    (await client.post('/donations', null, { params: { donorId } })).data;
 
-export const getAestheticCenterByEmail = async (email, token) => {
-    const response = await axios.get(
-        API_URL + '/aesthetic-centers/by-email/' + email,
-        { headers: { Authorization: 'Bearer ' + token } }
-    );
-    return response.data;
-};
-export const getAestheticCenters = async (token) => {
-    const response = await axios.get(
-        API_URL + '/aesthetic-centers',
-        { headers: { Authorization: 'Bearer ' + token } }
-    );
-    return response.data;
-};
-export const createAppointment = async (donorId, aestheticCenterId, token) => {
-    const response = await axios.post(
-        `${API_URL}/appointments?donorId=${donorId}&aestheticCenterId=${aestheticCenterId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return response.data;
-};
+export const getDonationsByDonor = async (donorId) =>
+    (await client.get(`/donations/donor/${donorId}`)).data;
 
-export const getAppointmentsByDonor = async (donorId, token) => {
-    const response = await axios.get(
-        `${API_URL}/appointments/donor/${donorId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return response.data;
-};
+export const getDonationsByAestheticCenter = async (centerId) =>
+    (await client.get(`/donations/aesthetic-center/${centerId}`)).data;
 
-export const getAppointmentsByCenter = async (centerId, token) => {
-    const response = await axios.get(
-        `${API_URL}/appointments/aesthetic-center/${centerId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return response.data;
-};
+// ---- Citas ----
+export const createAppointment = async (donorId, aestheticCenterId) =>
+    (await client.post('/appointments', null, { params: { donorId, aestheticCenterId } })).data;
 
-export const updateAppointmentStatus = async (appointmentId, status, token) => {
-    const response = await axios.put(
-        `${API_URL}/appointments/${appointmentId}/status?status=${status}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return response.data;
-};
+export const getAppointmentsByDonor = async (donorId) =>
+    (await client.get(`/appointments/donor/${donorId}`)).data;
+
+export const getAppointmentsByCenter = async (centerId) =>
+    (await client.get(`/appointments/aesthetic-center/${centerId}`)).data;
+
+export const updateAppointmentStatus = async (appointmentId, status) =>
+    (await client.put(`/appointments/${appointmentId}/status`, null, { params: { status } })).data;

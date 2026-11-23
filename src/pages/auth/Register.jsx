@@ -1,21 +1,27 @@
 import { useState } from 'react';
 import { register } from '../../api/auth';
-import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../../api/client';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
     const [form, setForm] = useState({ email: '', password: '', fullName: '', phone: '', city: '', role: 'DONOR', name: '', address: '' });
     const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setSubmitting(true);
         try {
             await register(form);
             navigate('/login');
         } catch (err) {
-            setError('Error al registrarse');
+            setError(getErrorMessage(err, 'Error al registrarse'));
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -40,12 +46,14 @@ const Register = () => {
                         </>
                     )}
                     <input style={styles.input} type="email" name="email" placeholder="Correo electrónico" onChange={handleChange} required />
-                    <input style={styles.input} type="password" name="password" placeholder="Contraseña" onChange={handleChange} required />
-                    <input style={styles.input} type="text" name="phone" placeholder="Teléfono" onChange={handleChange} required />
+                    <input style={styles.input} type="password" name="password" placeholder="Contraseña (mínimo 6 caracteres)" minLength={6} onChange={handleChange} required />
+                    <input style={styles.input} type="tel" name="phone" placeholder="Teléfono" onChange={handleChange} required />
                     <input style={styles.input} type="text" name="city" placeholder="Ciudad" onChange={handleChange} required />
-                    <button style={styles.button} type="submit">Registrarse</button>
+                    <button style={styles.button} type="submit" disabled={submitting}>
+                        {submitting ? 'Registrando...' : 'Registrarse'}
+                    </button>
                 </form>
-                <p style={styles.link}>¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+                <p style={styles.link}>¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></p>
             </div>
         </div>
     );

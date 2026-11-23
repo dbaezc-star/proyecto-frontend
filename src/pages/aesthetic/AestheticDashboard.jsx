@@ -1,33 +1,35 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getAestheticCenterByEmail, getDonationsByAestheticCenter, getAppointmentsByCenter, updateAppointmentStatus } from '../../api/donations';
+import { getMyCenterProfile, getDonationsByAestheticCenter, getAppointmentsByCenter, updateAppointmentStatus } from '../../api/donations';
+import { getErrorMessage } from '../../api/client';
 
 const AestheticDashboard = () => {
-    const { user, token, logoutUser } = useAuth();
+    const { user, logoutUser } = useAuth();
     const navigate = useNavigate();
     const [donations, setDonations] = useState([]);
     const [appointments, setAppointments] = useState([]);
-    const [centerId, setCenterId] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const center = await getAestheticCenterByEmail(user.email, token);
-                setCenterId(center.id);
-                const donationList = await getDonationsByAestheticCenter(center.id, token);
+                const center = await getMyCenterProfile();
+                const [donationList, appointmentList] = await Promise.all([
+                    getDonationsByAestheticCenter(center.id),
+                    getAppointmentsByCenter(center.id),
+                ]);
                 setDonations(donationList);
-                const appointmentList = await getAppointmentsByCenter(center.id, token);
                 setAppointments(appointmentList);
             } catch (err) {
-                console.error('Error cargando datos:', err);
+                setError(getErrorMessage(err, 'Error cargando tus datos'));
             } finally {
                 setLoading(false);
             }
         };
-        if (user?.email) fetchData();
-    }, [user, token]);
+        fetchData();
+    }, []);
 
     const handleLogout = () => {
         logoutUser();
@@ -36,10 +38,10 @@ const AestheticDashboard = () => {
 
     const handleStatus = async (appointmentId, status) => {
         try {
-            const updated = await updateAppointmentStatus(appointmentId, status, token);
-            setAppointments(appointments.map(a => a.id === appointmentId ? updated : a));
+            const updated = await updateAppointmentStatus(appointmentId, status);
+            setAppointments((prev) => prev.map(a => a.id === appointmentId ? updated : a));
         } catch (err) {
-            console.error('Error actualizando cita:', err);
+            setError(getErrorMessage(err, 'Error actualizando la cita'));
         }
     };
 
@@ -54,6 +56,7 @@ const AestheticDashboard = () => {
             </div>
             <div style={styles.content}>
                 <h3 style={styles.welcome}>Bienvenido, Centro Estético 👋</h3>
+                {error && <p style={styles.error}>{error}</p>}
                 <div style={styles.cards}>
                     <div style={styles.card}>
                         <h4 style={styles.cardTitle}>Mi Perfil</h4>
@@ -109,6 +112,7 @@ const styles = {
     logout: { backgroundColor: 'white', color: '#e91e8c', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' },
     content: { padding: '2rem' },
     welcome: { color: '#333', marginBottom: '1.5rem' },
+    error: { backgroundColor: '#fdecea', color: '#b71c1c', padding: '0.75rem 1rem', borderRadius: '6px', marginBottom: '1rem' },
     cards: { display: 'flex', gap: '1.5rem', flexWrap: 'wrap' },
     card: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', minWidth: '280px', flex: 1 },
     cardTitle: { color: '#e91e8c', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' },

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/auth/login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
@@ -7,17 +8,23 @@ import DonorDashboard from './pages/donor/DonorDashboard';
 import AestheticDashboard from './pages/aesthetic/AestheticDashboard';
 
 function App() {
-    console.log('App cargado');
     return (
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                    <Route path="/" element={<Navigate to="/login" />} />
+                    <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/donor/dashboard" element={<DonorDashboard />} />
-                    <Route path="/aesthetic/dashboard" element={<AestheticDashboard />} />
+                    <Route path="/dashboard" element={
+                        <ProtectedRoute><Dashboard /></ProtectedRoute>
+                    } />
+                    <Route path="/donor/dashboard" element={
+                        <ProtectedRoute role="DONOR"><DonorDashboard /></ProtectedRoute>
+                    } />
+                    <Route path="/aesthetic/dashboard" element={
+                        <ProtectedRoute role="AESTHETIC_CENTER"><AestheticDashboard /></ProtectedRoute>
+                    } />
+                    <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
@@ -25,4 +32,3 @@ function App() {
 }
 
 export default App;
-
